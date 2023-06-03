@@ -1,6 +1,14 @@
 const { query } = require('express');
 const Tour = require('./../models/tourModel');
 
+exports.aliasTopTour = async(req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+}
+
+
 exports.getAllTours = async (req, res) => {
   console.log(req.query);
   try {
@@ -26,7 +34,7 @@ exports.getAllTours = async (req, res) => {
       query = query.sort('-createdAt');
     }
 
-    // Field Limiting/projecting the fields.
+    // 4) Field Limiting/projecting the fields.
     if (req.query.fields) {
       const fields = req.query.fields.split(',').join(' ');
       query = query.select(fields);
@@ -34,15 +42,23 @@ exports.getAllTours = async (req, res) => {
       query = query.select('-__v');
     }
 
+    // 5) Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skip = (page-1) * limit;
+
+    query = query.skip(skip).limit(limit);  
+
+    if(req.query.page){
+      const numTours = await Tour.countDocuments();
+      if(skip >= numTours){
+        throw new Error('The page doesn\'t exist');
+      }
+    }
+
     // EXECUTE QUERY
 
     const tours = await query;
-    // const query = Tour.find()
-    //   .where('duration')
-    //   .equals(5)
-    //   .where('difficulty')
-    //   .equals('easy');
-
     // SEND RESPONSE
     res.status(200).json({
       status: 'success',
@@ -62,7 +78,7 @@ exports.getAllTours = async (req, res) => {
 // Handling the URL requests
 exports.getTour = async (req, res) => {
   try {
-    const tour = await Tour.findById(req.params.id); //shorthand to write as the follow sccript
+    const tour = await Tour.findById(req.params.id); //shorthand to write as the follow script
     // Tour.findOne({ _id: req.param.id }) same working in the mongoShell as above
     res.status(200).json({
       status: 'success',
