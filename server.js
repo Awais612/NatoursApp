@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+
+// Catching uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('UNHANDLED Exception! 💥 SHUTTING DOWN...');
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
+
 dotenv.config({ path: './config.env' });
 
 const app = require('./app');
@@ -16,7 +25,6 @@ mongoose
   .then(() => {
     console
       .log('DB connection successful')
-      .catch((err) => console.log('Error'));
   });
 
 const port = process.env.PORT || 3000;
@@ -36,12 +44,3 @@ process.on('unhandledRejection', (err) => {
   });
 });
 
-// Catching uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.log('UNHANDLED Exception! 💥 SHUTTING DOWN...');
-  console.log(err.name, err.message);
-
-  server.close(() => {
-    process.exit();
-  });
-});
