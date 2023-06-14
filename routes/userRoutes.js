@@ -6,6 +6,7 @@ const router = express.Router();
 // Defining routes for the users resource
 
 router.post('/signup', authController.signup);
+router.post('/login', authController.login);
 
 router
   .route('/')

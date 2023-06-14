@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'You must have to setup the password for the account.'],
     minlength: 8,
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -39,15 +40,22 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre('save', async function(next){
-    if(!this.isModified('password')) return next();
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
 
-    // Password encryption with the hash cost of 12 
-    this.password = await bcrypt.hash(this.password, 12);
-    this.passwordConfirm = undefined;
+  // Password encryption with the hash cost of 12
+  this.password = await bcrypt.hash(this.password, 12);
+  this.passwordConfirm = undefined;
 
-    next();
+  next();
 });
+
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
